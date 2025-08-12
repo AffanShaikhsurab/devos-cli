@@ -772,7 +772,10 @@ export async function executeBmadTask(taskId: string, params: Record<string, any
   try {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
-    const taskPath = path.resolve(__dirname, `../bmad/bmad-core/tasks/${taskId}.md`);
+    const tasksBasePath = process.env.BMAD_TASKS_PATH
+      ? path.resolve(process.env.BMAD_TASKS_PATH)
+      : path.resolve(__dirname, '../bmad/bmad-core/tasks');
+    const taskPath = path.join(tasksBasePath, `${taskId}.md`);
 
     const exists = await fs.promises.access(taskPath).then(() => true).catch(() => false);
     if (!exists) {
