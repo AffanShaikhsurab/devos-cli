@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { fileURLToPath } from 'url';
 import { writeFile, createDirectory, displayTree } from '../utils/file-ops.js';
 import { setReadFilesTracker } from './validators.js';
 
@@ -763,6 +764,35 @@ export async function updateTasks(taskUpdates: TaskUpdate[]): Promise<ToolResult
   }
 }
 
+/**
+ * Executes a BMad task by reading its definition file.
+ * This is a placeholder for a more complex implementation.
+ */
+export async function executeBmadTask(taskId: string, params: Record<string, any>): Promise<ToolResult> {
+  try {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const taskPath = path.resolve(__dirname, `../bmad/bmad-core/tasks/${taskId}.md`);
+
+    const exists = await fs.promises.access(taskPath).then(() => true).catch(() => false);
+    if (!exists) {
+      return createToolResponse(false, undefined, '', `Error: BMad task '${taskId}' not found.`);
+    }
+
+    const taskContent = await fs.promises.readFile(taskPath, 'utf-8');
+
+    // TODO: This is where a full implementation would go.
+    // A real version would parse the markdown task instructions and execute them step-by-step.
+    // For now, we will return the task instructions for the AI to follow.
+    const message = `BMad task '${taskId}' initiated. The instructions for this task have been loaded. Please follow them.`;
+
+    return createToolResponse(true, `Task Instructions for ${taskId}:\n\n${taskContent}`, message);
+
+  } catch (error: any) {
+    return createToolResponse(false, undefined, '', `Error executing BMad task: ${error.message}`);
+  }
+}
+
 // Tool Registry: maps tool names to functions
 export const TOOL_REGISTRY = {
   read_file: readFile,
@@ -774,6 +804,7 @@ export const TOOL_REGISTRY = {
   execute_command: executeCommand,
   create_tasks: createTasks,
   update_tasks: updateTasks,
+  execute_bmad_task: executeBmadTask,
 };
 
 /**
@@ -819,6 +850,8 @@ export async function executeTool(toolName: string, toolArgs: Record<string, any
         return await toolFunction(toolArgs.user_query, toolArgs.tasks);
       case 'update_tasks':
         return await toolFunction(toolArgs.task_updates);
+      case 'execute_bmad_task':
+        return await toolFunction(toolArgs.task_id, toolArgs.params);
       default:
         return createToolResponse(false, undefined, '', 'Error: Tool not implemented');
     }

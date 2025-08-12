@@ -4,6 +4,7 @@ import { loginCommand } from './definitions/login.js';
 import { modelCommand } from './definitions/model.js';
 import { clearCommand } from './definitions/clear.js';
 import { reasoningCommand } from './definitions/reasoning.js';
+import { agentCommand } from './definitions/agent.js';
 
 const availableCommands: CommandDefinition[] = [
   helpCommand,
@@ -11,6 +12,7 @@ const availableCommands: CommandDefinition[] = [
   modelCommand,
   clearCommand,
   reasoningCommand,
+  agentCommand,
 ];
 
 export function getAvailableCommands(): CommandDefinition[] {
@@ -26,9 +28,10 @@ export function handleSlashCommand(
   context: CommandContext
 ) {
   // Extract the command part, everything up to the first space or end of string
-  const fullCommand = command.slice(1);
-  const spaceIndex = fullCommand.indexOf(' ');
-  const cmd = spaceIndex > -1 ? fullCommand.substring(0, spaceIndex).toLowerCase() : fullCommand.toLowerCase();
+  const fullCommand = command.slice(1).trim();
+  const parts = fullCommand.split(' ');
+  const cmd = parts[0].toLowerCase();
+  const args = parts.slice(1);
   
   const commandDef = getAvailableCommands().find(c => c.command === cmd);
   
@@ -39,7 +42,7 @@ export function handleSlashCommand(
   });
   
   if (commandDef) {
-    commandDef.handler(context);
+    commandDef.handler(context, args);
   }
 }
 

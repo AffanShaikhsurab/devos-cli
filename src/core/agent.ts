@@ -3,8 +3,11 @@ import { executeTool } from '../tools/tools.js';
 import { validateReadBeforeEdit, getReadBeforeEditError } from '../tools/validators.js';
 import { ALL_TOOL_SCHEMAS, DANGEROUS_TOOLS, APPROVAL_REQUIRED_TOOLS } from '../tools/tool-schemas.js';
 import { ConfigManager } from '../utils/local-settings.js';
-import fs from 'fs';
+import fs from 'fs-extra';
 import path from 'path';
+import yaml from 'js-yaml';
+import { extractYamlFromAgent } from '../bmad/common/utils/yaml-utils.js';
+import { fileURLToPath } from 'url';
 
 interface Message {
   role: 'system' | 'user' | 'assistant' | 'tool';
@@ -32,6 +35,7 @@ export class Agent {
   private requestCount: number = 0;
   private currentAbortController: AbortController | null = null;
   private isInterrupted: boolean = false;
+  private activeBmadAgent: string | null = 'bmad-master'; // Default agent
 
   private constructor(
     model: string,
@@ -46,15 +50,8 @@ export class Agent {
     // Set debug mode
     debugEnabled = debug || false;
 
-    // Build system message
-    if (systemMessage) {
-      this.systemMessage = systemMessage;
-    } else {
-      this.systemMessage = this.buildDefaultSystemMessage();
-    }
-
-    // Add system message to conversation
-    this.messages.push({ role: 'system', content: this.systemMessage });
+    // System message is now handled in the async create method
+    this.systemMessage = systemMessage || '';
   }
 
   static async create(
@@ -74,60 +71,71 @@ export class Agent {
       systemMessage,
       debug
     );
+
+    if (!systemMessage) {
+      agent.systemMessage = await agent.buildDefaultSystemMessage();
+    }
+
+    agent.messages.push({ role: 'system', content: agent.systemMessage });
+
     return agent;
   }
 
-  private buildDefaultSystemMessage(): string {
-    return `You are a coding assistant powered by ${this.model} on Groq. Tools are available to you. Use tools to complete tasks.
+  public async setActiveBmadAgent(agentId: string): Promise<void> {
+    this.activeBmadAgent = agentId;
+    // Re-generate and update the system message in the conversation history
+    this.systemMessage = await this.buildDefaultSystemMessage();
+    const systemMsgIndex = this.messages.findIndex(msg => msg.role === 'system');
+    if (systemMsgIndex >= 0) {
+      this.messages[systemMsgIndex].content = this.systemMessage;
+    } else {
+      this.messages.unshift({ role: 'system', content: this.systemMessage });
+    }
+  }
 
-CRITICAL: For ANY implementation request (building apps, creating components, writing code), you MUST use tools to create actual files. NEVER provide text-only responses for coding tasks that require implementation.
+  private async buildDefaultSystemMessage(): Promise<string> {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const isDist = __filename.includes('dist');
 
-Use tools to:
-- Read and understand files (read_file, list_files, search_files)
-- Create, edit, and manage files (create_file, edit_file, list_files, read_file, delete_file)
-- Execute commands (execute_command)
-- Search for information (search_files)
-- Help you understand the codebase before answering the user's question
+    // Base prompt for the Groq CLI
+    let systemMessage = `You are a coding assistant powered by ${this.model} on Groq, operating within the BMad-Method framework.`;
 
-IMPLEMENTATION TASK RULES:
-- When asked to "build", "create", "implement", or "make" anything: USE TOOLS TO CREATE FILES
-- Start immediately with create_file or list_files - NO text explanations first
-- Create actual working code, not example snippets
-- Build incrementally: create core files first, then add features
-- NEVER respond with "here's how you could do it" - DO IT with tools
+    if (this.activeBmadAgent) {
+      try {
+        const bmadBasePath = isDist ?
+            path.resolve(__dirname, '..', '..', 'src', 'bmad') :
+            path.resolve(__dirname, '..', 'bmad');
 
-FILE OPERATION DECISION TREE:
-- ALWAYS check if file exists FIRST using list_files or read_file
-- Need to modify existing content? → read_file first, then edit_file (never create_file)
-- Need to create something new? → list_files to check existence first, then create_file
-- File exists but want to replace completely? → create_file with overwrite=true
-- Unsure if file exists? → list_files or read_file to check first
-- MANDATORY: read_file before any edit_file operation
+        // 1. Load the agent's markdown file
+        const agentFilePath = path.join(bmadBasePath, 'bmad-core', 'agents', `${this.activeBmadAgent}.md`);
+        const agentContent = await fs.readFile(agentFilePath, 'utf-8');
 
-IMPORTANT TOOL USAGE RULES:
-  - Always use "file_path" parameter for file operations, never "path"
-  - Check tool schemas carefully before calling functions
-  - Required parameters are listed in the "required" array
-  - Text matching in edit_file must be EXACT (including whitespace)
-  - NEVER prefix tool names with "repo_browser."
+        // 2. Extract the YAML configuration from the agent file
+        const yamlContent = extractYamlFromAgent(agentContent);
+        if (yamlContent) {
+            const agentConfig = yaml.load(yamlContent) as any;
 
-COMMAND EXECUTION SAFETY:
-  - Only use execute_command for commands that COMPLETE QUICKLY (tests, builds, short scripts)
-  - NEVER run commands that start long-running processes (servers, daemons, web apps)
-  - Examples of AVOIDED commands: "flask app.py", "npm start", "python -m http.server"
-  - Examples of SAFE commands: "python test_script.py", "npm test", "ls -la", "git status"
-  - If a long-running command is needed to complete the task, provide it to the user at the end of the response, not as a tool call, with a description of what it's for.
+            // 3. Prepend the agent's persona and core principles
+            const persona = agentConfig.persona;
+            if (persona) {
+                systemMessage += `\n\nCRITICAL: You are now operating as the ${persona.role}.
+                Your identity is: ${persona.identity}.
+                Your core principles are:
+                ${(persona.core_principles || []).map((p: string) => `- ${p}`).join('\n')}`;
+            }
+        }
+      } catch (error) {
+          debugLog(`Could not load BMad agent ${this.activeBmadAgent}:`, error);
+          systemMessage += `\n\nWarning: Could not load the specified BMad agent persona. Please ensure the agent ID is correct.`;
+      }
+    }
 
-IMPORTANT: When creating files, keep them focused and reasonably sized. For large applications:
-1. Start with a simple, minimal version first
-2. Create separate files for different components
-3. Build incrementally rather than generating massive files at once
+    // Add BMad's core operational rules and the CLI's tool usage rules
+    systemMessage += `\n\nFollow the BMad workflow: planning and documentation come first, followed by sequential, story-driven development. Use the high-level BMad tasks available to you.`;
+    systemMessage += `\nCRITICAL CONTEXT PROVIDED: When available, necessary context from PRD and Architecture documents will be provided at the beginning of the prompt. You MUST use this context for implementation and not request it again.`;
 
-Be direct and efficient.
-
-Don't generate markdown tables.
-
-When asked about your identity, you should identify yourself as a coding assistant running on the ${this.model} model via Groq.`;
+    return systemMessage;
   }
 
 
@@ -173,22 +181,28 @@ When asked about your identity, you should identify yourself as a coding assista
     this.messages = this.messages.filter(msg => msg.role === 'system');
   }
 
-  public setModel(model: string): void {
+  public async setModel(model: string): Promise<void> {
     this.model = model;
     // Save as default model
     this.configManager.setDefaultModel(model);
     // Update system message to reflect new model
-    const newSystemMessage = this.buildDefaultSystemMessage();
+    const newSystemMessage = await this.buildDefaultSystemMessage();
     this.systemMessage = newSystemMessage;
     // Update the system message in the conversation
-    const systemMsgIndex = this.messages.findIndex(msg => msg.role === 'system' && msg.content.includes('coding assistant'));
+    const systemMsgIndex = this.messages.findIndex(msg => msg.role === 'system');
     if (systemMsgIndex >= 0) {
       this.messages[systemMsgIndex].content = newSystemMessage;
+    } else {
+        this.messages.unshift({ role: 'system', content: this.systemMessage });
     }
   }
 
   public getCurrentModel(): string {
     return this.model;
+  }
+
+  public getSystemMessage(): string {
+    return this.systemMessage;
   }
 
   public setSessionAutoApprove(enabled: boolean): void {

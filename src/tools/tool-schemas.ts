@@ -359,6 +359,25 @@ export const UPDATE_TASKS_SCHEMA: ToolSchema = {
   }
 };
 
+export const EXECUTE_BMAD_TASK_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'execute_bmad_task',
+    description: 'Executes a structured BMad task like creating a document from a template or preparing the next development story based on its markdown definition.',
+    parameters: {
+      type: 'object',
+      properties: {
+        task_id: { type: 'string', description: 'The ID of the task to run (e.g., "create-doc", "create-next-story").' },
+        params: {
+          type: 'object',
+          description: 'An object of parameters for the task, such as { "template": "prd-tmpl.yaml" } for create-doc.'
+        }
+      },
+      required: ['task_id']
+    }
+  }
+};
+
 // All tools combined
 export const ALL_TOOL_SCHEMAS = [
   READ_FILE_SCHEMA,
@@ -369,7 +388,8 @@ export const ALL_TOOL_SCHEMAS = [
   LIST_FILES_SCHEMA,
   CREATE_TASKS_SCHEMA,
   UPDATE_TASKS_SCHEMA,
-  EXECUTE_COMMAND_SCHEMA
+  EXECUTE_COMMAND_SCHEMA,
+  EXECUTE_BMAD_TASK_SCHEMA
 ];
 
 // Safe tools that can be auto-executed without approval
