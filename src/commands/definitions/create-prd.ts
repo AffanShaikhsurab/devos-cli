@@ -9,7 +9,7 @@ import { CommandDefinition, CommandContext } from '../base.js';
  */
 export const createPrdCommand: CommandDefinition = {
   command: 'create-prd',
-  description: 'Starts the workflow to create a Product Requirements Document (PRD).',
+  description: 'Launch the Product Manager to start creating a new Product Requirements Document.',
   handler: async ({ agent, addMessage }: CommandContext, args: string[]) => {
     // 1. Switch to the 'pm' agent persona to ensure the correct context and tools are available.
     await agent.setActiveBmadAgent('pm');

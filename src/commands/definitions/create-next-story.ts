@@ -9,7 +9,7 @@ import { CommandDefinition, CommandContext } from '../base.js';
  */
 export const createNextStoryCommand: CommandDefinition = {
   command: 'create-next-story',
-  description: 'Starts the workflow for the Scrum Master to create the next development story.',
+  description: 'Launch the Scrum Master to prepare the next actionable development story.',
   handler: async ({ agent, addMessage }: CommandContext, args: string[]) => {
     // 1. Switch to the 'sm' agent persona to ensure it uses the correct context and tools.
     await agent.setActiveBmadAgent('sm');

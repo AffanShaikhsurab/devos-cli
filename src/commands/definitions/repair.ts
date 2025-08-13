@@ -9,7 +9,7 @@ import { CommandDefinition, CommandContext } from '../base.js';
  */
 export const repairCommand: CommandDefinition = {
   command: 'repair',
-  description: 'Engage the Repair Agent to fix a failed implementation. Usage: /repair <path_to_story_file>',
+  description: 'Engage the Repair Agent to autonomously fix and learn from a failed implementation.',
   handler: async ({ agent, addMessage }: CommandContext, args: string[]) => {
     const storyFilePath = args[0];
     if (!storyFilePath) {

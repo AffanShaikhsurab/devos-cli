@@ -17,8 +17,8 @@ To meticulously review a completed development story, validate its correctness a
 - **Action:** If test execution instructions are available in the story or project `README.md`, run all relevant tests to ensure they pass.
 - **Tool:** `execute_command` (e.g., `npm test`)
 - **Decision:**
-    - If the code is incorrect, tests fail, or it does not meet all criteria: **HALT EXECUTION**. Report the specific failures and state that the story is **REJECTED**. Do not proceed.
-    - If the code is correct and all tests pass: Proceed to the next step.
+    - If the code is incorrect, tests fail, or it does not meet all criteria: **Report the specific failures**. Then, you MUST automatically invoke the `/dev` command on the story file again, including your rejection notes as context for the `dev` agent to fix the issues. State that the story is **REJECTED** and has been returned to development. **HALT EXECUTION** of the QA task.
+    - If everything is correct and all tests pass: Proceed to the next step.
 
 ### 3. Generate Implementation Documentation
 - **Action:** If validation is successful, create the structured documentation for the `implementations/` folder.

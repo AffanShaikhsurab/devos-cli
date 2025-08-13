@@ -9,7 +9,7 @@ import { CommandDefinition, CommandContext } from '../base.js';
  */
 export const qaCommand: CommandDefinition = {
   command: 'qa',
-  description: 'Engage the QA Agent to review a completed story. Usage: /qa <path_to_story_file>',
+  description: 'Trigger a QA review of a completed story to verify correctness and document the implementation.',
   handler: async ({ agent, addMessage }: CommandContext, args: string[]) => {
     const storyFilePath = args[0];
     if (!storyFilePath) {
