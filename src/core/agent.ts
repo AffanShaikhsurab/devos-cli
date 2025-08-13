@@ -257,7 +257,16 @@ export class Agent {
                           const docContent = await fs.readFile(fullDocPath, 'utf-8');
                           contextBlock += `--- BEGIN DOCUMENT: ${docPath} ---\n${docContent}\n--- END DOCUMENT: ${docPath} ---\n\n`;
                       }
-                  }
+                  const docPromises = Array.from(requiredDocs).map(async (docPath) => {
+                      const fullDocPath = path.resolve(process.cwd(), 'docs', docPath);
+                      if (await fs.pathExists(fullDocPath)) {
+                          const docContent = await fs.readFile(fullDocPath, 'utf-8');
+                          return `--- BEGIN DOCUMENT: ${docPath} ---\n${docContent}\n--- END DOCUMENT: ${docPath} ---\n\n`;
+                      }
+                      return '';
+                  });
+                  const docBlocks = await Promise.all(docPromises);
+                  contextBlock += docBlocks.filter(Boolean).join('');
                   return `${contextBlock}\nOriginal Request: ${userInput}`;
               }
           } catch (error) {
