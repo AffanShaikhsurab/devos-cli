@@ -3,7 +3,7 @@ import { CommandDefinition, CommandContext } from '../base.js';
 export const reasoningCommand: CommandDefinition = {
   command: 'reasoning',
   description: 'Toggle display of reasoning content in messages',
-  handler: ({ addMessage, toggleReasoning, showReasoning }: CommandContext) => {
+  handler: ({ addMessage, toggleReasoning, showReasoning }: CommandContext, args: string[]) => {
     if (toggleReasoning) {
       toggleReasoning();
       const newState = !showReasoning;

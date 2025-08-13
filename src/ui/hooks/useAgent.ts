@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { dbManager } from '../../utils/database.js';
 import { Agent } from '../../core/agent.js';
 import { DANGEROUS_TOOLS, APPROVAL_REQUIRED_TOOLS } from '../../tools/tool-schemas.js';
 
@@ -28,7 +29,7 @@ export function useAgent(
   onResumeRequest?: () => void,
   onCompleteRequest?: () => void
 ) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => dbManager.getMessages());
   const [userMessageHistory, setUserMessageHistory] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentToolExecution, setCurrentToolExecution] = useState<ToolExecution | null>(null);
@@ -44,6 +45,21 @@ export function useAgent(
     maxIterations: number;
     resolve: (shouldContinue: boolean) => void;
   } | null>(null);
+  const [activeAgentName, setActiveAgentName] = useState('bmad-master');
+
+  // This requires a new method on the Agent class to get the active agent ID
+  // We'll add a temporary poller to keep the UI in sync with the agent's state
+  useEffect(() => {
+      const interval = setInterval(() => {
+          if (agent && typeof (agent as any).getActiveBmadAgent === 'function') {
+              const currentAgentId = (agent as any).getActiveBmadAgent();
+              if (currentAgentId !== activeAgentName) {
+                  setActiveAgentName(currentAgentId);
+              }
+          }
+      }, 500); // Poll every 500ms
+      return () => clearInterval(interval);
+  }, [agent, activeAgentName]);
 
   const addMessage = useCallback((message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
     const newMessage: ChatMessage = {
@@ -51,6 +67,9 @@ export function useAgent(
       id: Math.random().toString(36).substr(2, 9),
       timestamp: new Date(),
     };
+
+    dbManager.addMessage(newMessage); // <-- ADD THIS LINE to save the message
+
     setMessages(prev => [...prev, newMessage]);
     return newMessage.id;
   }, []);
@@ -301,6 +320,7 @@ export function useAgent(
   }, [sessionAutoApprove, agent]);
 
   const clearHistory = useCallback(() => {
+    dbManager.clearHistory(); // <-- ADD THIS LINE
     setMessages([]);
     setUserMessageHistory([]);
     // Don't reset sessionAutoApprove, it should persist across /clear
@@ -341,5 +361,6 @@ export function useAgent(
     toggleAutoApprove,
     toggleReasoning,
     interruptRequest,
+    activeAgentName,
   };
 }

@@ -1,7 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import yaml from 'js-yaml';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { fileURLToPath } from 'url';
 import { writeFile, createDirectory, displayTree } from '../utils/file-ops.js';
 import { setReadFilesTracker } from './validators.js';
 
@@ -763,6 +765,45 @@ export async function updateTasks(taskUpdates: TaskUpdate[]): Promise<ToolResult
   }
 }
 
+/**
+ * Executes a BMad task by reading its definition file.
+ * This version can parse task instructions and handle basic interactive tasks.
+ */
+export async function executeBmadTask(taskId: string, params: Record<string, any>): Promise<ToolResult> {
+  try {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+
+    const isDist = __filename.includes('dist');
+    const bmadBasePath = isDist ?
+        path.resolve(__dirname, '..', '..', 'src', 'bmad') :
+        path.resolve(__dirname, '..', 'bmad');
+
+    const taskPath = path.join(bmadBasePath, 'bmad-core', 'tasks', `${taskId}.md`);
+
+    const exists = await fs.promises.access(taskPath).then(() => true).catch(() => false);
+    if (!exists) {
+      return createToolResponse(false, undefined, '', `Error: BMad task '${taskId}' not found.`);
+    }
+
+    const taskContent = await fs.promises.readFile(taskPath, 'utf-8');
+
+    // This is still a simplified parser. A full implementation would be a state machine.
+    // For now, we identify the task's purpose and return its instructions to the LLM.
+
+    const purposeMatch = taskContent.match(/## Purpose\n\n([\s\S]*?)\n\n##/);
+    const purpose = purposeMatch ? purposeMatch[1].trim() : `Execute the ${taskId} task.`;
+
+    const message = `BMad task '${taskId}' initiated. Purpose: ${purpose}. The instructions for this task have been loaded into context. Please follow them precisely.`;
+
+    // Return the full task content so the AI has the instructions.
+    return createToolResponse(true, `Task Instructions for '${taskId}':\n\n${taskContent}`, message);
+
+  } catch (error: any) {
+    return createToolResponse(false, undefined, '', `Error executing BMad task: ${error.message}`);
+  }
+}
+
 // Tool Registry: maps tool names to functions
 export const TOOL_REGISTRY = {
   read_file: readFile,
@@ -774,7 +815,41 @@ export const TOOL_REGISTRY = {
   execute_command: executeCommand,
   create_tasks: createTasks,
   update_tasks: updateTasks,
+  execute_bmad_task: executeBmadTask,
+  create_bmad_document: createBmadDocument,
 };
+
+export async function createBmadDocument(templateId: string, projectName: string): Promise<ToolResult> {
+  try {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const isDist = __filename.includes('dist');
+    const templatesPath = isDist ?
+        path.resolve(__dirname, '..', '..', 'src', 'bmad', 'bmad-core', 'templates') :
+        path.resolve(__dirname, '..', 'bmad', 'bmad-core', 'templates');
+
+    const templateFile = path.join(templatesPath, templateId);
+    const exists = await fs.promises.access(templateFile).then(() => true).catch(() => false);
+    if (!exists) {
+        return createToolResponse(false, undefined, `Template ${templateId} not found.`);
+    }
+
+    const templateContent = await fs.promises.readFile(templateFile, 'utf-8');
+    const templateConfig = yaml.load(templateContent) as any;
+
+    let documentContent = `# ${templateConfig.template.title.replace('{{project_name}}', projectName)}\n\n`;
+
+    // This is a simplified simulation of the interactive process
+    for (const section of templateConfig.sections) {
+        documentContent += `## ${section.title}\n\n*This section would be filled out based on the instructions ("${section.instruction}") and user interaction.*\n\n`;
+    }
+
+    return createToolResponse(true, documentContent, `Document structure for "${projectName}" created successfully using ${templateId}.`);
+
+  } catch (error: any) {
+    return createToolResponse(false, undefined, `Failed to create document: ${error.message}`);
+  }
+}
 
 /**
  * Execute a tool by name with given arguments
@@ -819,6 +894,10 @@ export async function executeTool(toolName: string, toolArgs: Record<string, any
         return await toolFunction(toolArgs.user_query, toolArgs.tasks);
       case 'update_tasks':
         return await toolFunction(toolArgs.task_updates);
+      case 'execute_bmad_task':
+        return await toolFunction(toolArgs.task_id, toolArgs.params);
+      case 'create_bmad_document':
+        return await toolFunction(toolArgs.template_id, toolArgs.project_name);
       default:
         return createToolResponse(false, undefined, '', 'Error: Tool not implemented');
     }
