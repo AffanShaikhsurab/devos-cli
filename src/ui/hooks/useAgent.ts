@@ -51,7 +51,8 @@ export function useAgent(
   useEffect(() => {
       const interval = setInterval(() => {
           if (agent && typeof (agent as any).getActiveBmadAgent === 'function') {
-              const currentAgentId = (agent as any).getActiveBmadAgent();
+          if (agent && typeof (agent as BmadAgent).getActiveBmadAgent === 'function') {
+              const currentAgentId = (agent as BmadAgent).getActiveBmadAgent();
               if (currentAgentId !== activeAgentName) {
                   setActiveAgentName(currentAgentId);
               }
