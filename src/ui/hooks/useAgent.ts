@@ -57,7 +57,22 @@ export function useAgent(
               }
           }
       }, 500); // Poll every 500ms
-      return () => clearInterval(interval);
+    if (!agent || typeof (agent as any).onActiveAgentChanged !== 'function') {
+      return;
+    }
+    // Subscribe to agent's active agent change event
+    const handler = (currentAgentId: string) => {
+      if (currentAgentId !== activeAgentName) {
+        setActiveAgentName(currentAgentId);
+      }
+    };
+    (agent as any).onActiveAgentChanged(handler);
+    // Cleanup: unsubscribe on unmount
+    return () => {
+      if (typeof (agent as any).offActiveAgentChanged === 'function') {
+        (agent as any).offActiveAgentChanged(handler);
+      }
+    };
   }, [agent, activeAgentName]);
 
   const addMessage = useCallback((message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
