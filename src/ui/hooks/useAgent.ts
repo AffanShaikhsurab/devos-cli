@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Agent } from '../../core/agent.js';
 import { DANGEROUS_TOOLS, APPROVAL_REQUIRED_TOOLS } from '../../tools/tool-schemas.js';
 
@@ -44,6 +44,21 @@ export function useAgent(
     maxIterations: number;
     resolve: (shouldContinue: boolean) => void;
   } | null>(null);
+  const [activeAgentName, setActiveAgentName] = useState('bmad-master');
+
+  // This requires a new method on the Agent class to get the active agent ID
+  // We'll add a temporary poller to keep the UI in sync with the agent's state
+  useEffect(() => {
+      const interval = setInterval(() => {
+          if (agent && typeof (agent as any).getActiveBmadAgent === 'function') {
+              const currentAgentId = (agent as any).getActiveBmadAgent();
+              if (currentAgentId !== activeAgentName) {
+                  setActiveAgentName(currentAgentId);
+              }
+          }
+      }, 500); // Poll every 500ms
+      return () => clearInterval(interval);
+  }, [agent, activeAgentName]);
 
   const addMessage = useCallback((message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
     const newMessage: ChatMessage = {
@@ -341,5 +356,6 @@ export function useAgent(
     toggleAutoApprove,
     toggleReasoning,
     interruptRequest,
+    activeAgentName,
   };
 }

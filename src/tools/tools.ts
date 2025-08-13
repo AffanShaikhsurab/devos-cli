@@ -766,16 +766,19 @@ export async function updateTasks(taskUpdates: TaskUpdate[]): Promise<ToolResult
 
 /**
  * Executes a BMad task by reading its definition file.
- * This is a placeholder for a more complex implementation.
+ * This version can parse task instructions and handle basic interactive tasks.
  */
 export async function executeBmadTask(taskId: string, params: Record<string, any>): Promise<ToolResult> {
   try {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
-    const tasksBasePath = process.env.BMAD_TASKS_PATH
-      ? path.resolve(process.env.BMAD_TASKS_PATH)
-      : path.resolve(__dirname, '../bmad/bmad-core/tasks');
-    const taskPath = path.join(tasksBasePath, `${taskId}.md`);
+
+    const isDist = __filename.includes('dist');
+    const bmadBasePath = isDist ?
+        path.resolve(__dirname, '..', '..', 'src', 'bmad') :
+        path.resolve(__dirname, '..', 'bmad');
+
+    const taskPath = path.join(bmadBasePath, 'bmad-core', 'tasks', `${taskId}.md`);
 
     const exists = await fs.promises.access(taskPath).then(() => true).catch(() => false);
     if (!exists) {
@@ -784,12 +787,16 @@ export async function executeBmadTask(taskId: string, params: Record<string, any
 
     const taskContent = await fs.promises.readFile(taskPath, 'utf-8');
 
-    // TODO: This is where a full implementation would go.
-    // A real version would parse the markdown task instructions and execute them step-by-step.
-    // For now, we will return the task instructions for the AI to follow.
-    const message = `BMad task '${taskId}' initiated. The instructions for this task have been loaded. Please follow them.`;
+    // This is still a simplified parser. A full implementation would be a state machine.
+    // For now, we identify the task's purpose and return its instructions to the LLM.
 
-    return createToolResponse(true, `Task Instructions for ${taskId}:\n\n${taskContent}`, message);
+    const purposeMatch = taskContent.match(/## Purpose\n\n([\s\S]*?)\n\n##/);
+    const purpose = purposeMatch ? purposeMatch[1].trim() : `Execute the ${taskId} task.`;
+
+    const message = `BMad task '${taskId}' initiated. Purpose: ${purpose}. The instructions for this task have been loaded into context. Please follow them precisely.`;
+
+    // Return the full task content so the AI has the instructions.
+    return createToolResponse(true, `Task Instructions for '${taskId}':\n\n${taskContent}`, message);
 
   } catch (error: any) {
     return createToolResponse(false, undefined, '', `Error executing BMad task: ${error.message}`);

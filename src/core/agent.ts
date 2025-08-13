@@ -205,6 +205,10 @@ export class Agent {
     return this.systemMessage;
   }
 
+  public getActiveBmadAgent(): string | null {
+    return this.activeBmadAgent;
+  }
+
   public setSessionAutoApprove(enabled: boolean): void {
     this.sessionAutoApprove = enabled;
   }

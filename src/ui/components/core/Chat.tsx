@@ -59,6 +59,7 @@ export default function Chat({ agent }: ChatProps) {
     toggleAutoApprove,
     toggleReasoning,
     interruptRequest,
+    activeAgentName,
   } = agentHook;
 
   const { exit } = useApp();
@@ -229,7 +230,7 @@ export default function Chat({ agent }: ChatProps) {
         </Box>
         <Box>
           <Text color="gray" dimColor>
-            {agent.getCurrentModel?.() || ''}
+              Agent: {activeAgentName || 'default'} | Model: {agent.getCurrentModel?.() || ''}
           </Text>
         </Box>
       </Box>
