@@ -1,0 +1,40 @@
+# FILE: .github/workflows/release.yml
+
+name: Release and Publish
+
+on:
+  push:
+    tags:
+      - 'v*.*.*' # This workflow runs only when a tag like v1.0.0 is pushed
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Required for trusted publishing to NPM
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x' # Use a stable LTS version of Node.js
+          registry-url: 'https://registry.npmjs.org' # Set the NPM registry
+
+      - name: Install dependencies
+        # Use 'npm ci' for faster, more reliable installs in CI environments
+        run: npm ci
+
+      - name: Build project
+        # This runs the 'tsc' command defined in our package.json
+        run: npm run build
+
+      - name: Publish to NPM
+        # This will publish the package to NPM using the version from package.json
+        run: npm publish --provenance --access public
+        env:
+          # The token is provided automatically by GitHub Actions, no secret needed
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
