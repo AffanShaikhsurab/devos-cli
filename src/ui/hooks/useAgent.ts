@@ -51,29 +51,13 @@ export function useAgent(
   useEffect(() => {
       const interval = setInterval(() => {
           if (agent && typeof (agent as any).getActiveBmadAgent === 'function') {
-          if (agent && typeof (agent as BmadAgent).getActiveBmadAgent === 'function') {
-              const currentAgentId = (agent as BmadAgent).getActiveBmadAgent();
+              const currentAgentId = (agent as any).getActiveBmadAgent();
               if (currentAgentId !== activeAgentName) {
                   setActiveAgentName(currentAgentId);
               }
           }
       }, 500); // Poll every 500ms
-    if (!agent || typeof (agent as any).onActiveAgentChanged !== 'function') {
-      return;
-    }
-    // Subscribe to agent's active agent change event
-    const handler = (currentAgentId: string) => {
-      if (currentAgentId !== activeAgentName) {
-        setActiveAgentName(currentAgentId);
-      }
-    };
-    (agent as any).onActiveAgentChanged(handler);
-    // Cleanup: unsubscribe on unmount
-    return () => {
-      if (typeof (agent as any).offActiveAgentChanged === 'function') {
-        (agent as any).offActiveAgentChanged(handler);
-      }
-    };
+      return () => clearInterval(interval);
   }, [agent, activeAgentName]);
 
   const addMessage = useCallback((message: Omit<ChatMessage, 'id' | 'timestamp'>) => {

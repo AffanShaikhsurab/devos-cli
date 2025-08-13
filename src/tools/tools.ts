@@ -777,10 +777,7 @@ export async function executeBmadTask(taskId: string, params: Record<string, any
     const isDist = __filename.includes('dist');
     const bmadBasePath = isDist ?
         path.resolve(__dirname, '..', '..', 'src', 'bmad') :
-    const isProduction = process.env.NODE_ENV === 'production';
-    const bmadBasePath = isProduction
-        ? path.resolve(__dirname, '..', '..', 'src', 'bmad')
-        : path.resolve(__dirname, '..', 'bmad');
+        path.resolve(__dirname, '..', 'bmad');
 
     const taskPath = path.join(bmadBasePath, 'bmad-core', 'tasks', `${taskId}.md`);
 

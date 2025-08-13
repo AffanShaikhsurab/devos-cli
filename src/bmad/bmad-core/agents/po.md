@@ -61,7 +61,7 @@ commands:
   - [span_205](start_span)doc-out: Output full document to current destination file[span_205](end_span)
   - [span_206](start_span)validate-story-draft {story}: run the task validate-next-story against the provided story file[span_206](end_span)
   - [span_207](start_span)yolo: Toggle Yolo Mode off on - on will skip doc section confirmations[span_207](end_span)
-  - [span_208](start_`po.md` is done. Next is `qa.md`.md)exit: Exit (confirm)[span_208](end_span)
+  - [span_208](start_span)exit: Exit (confirm)[span_208](end_span)
 dependencies:
   tasks:
     - [span_209](start_span)execute-checklist.md[span_209](end_span)

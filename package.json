@@ -15,7 +15,7 @@
 	},
 	"files": [
 		"dist",
-		"dist"
+		"src/bmad"
 	],
 	"dependencies": {
 		"chalk": "^5.4.1",
