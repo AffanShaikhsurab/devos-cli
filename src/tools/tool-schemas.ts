@@ -378,6 +378,22 @@ export const EXECUTE_BMAD_TASK_SCHEMA: ToolSchema = {
   }
 };
 
+export const CREATE_BMAD_DOCUMENT_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'create_bmad_document',
+    description: 'Generates a complete document by processing a BMad YAML template.',
+    parameters: {
+      type: 'object',
+      properties: {
+        template_id: { type: 'string', description: 'The filename of the template to use (e.g., "prd-tmpl.yaml").' },
+        project_name: { type: 'string', description: 'The name of the project for the document title.' },
+      },
+      required: ['template_id', 'project_name']
+    }
+  }
+};
+
 // All tools combined
 export const ALL_TOOL_SCHEMAS = [
   READ_FILE_SCHEMA,
@@ -389,7 +405,8 @@ export const ALL_TOOL_SCHEMAS = [
   CREATE_TASKS_SCHEMA,
   UPDATE_TASKS_SCHEMA,
   EXECUTE_COMMAND_SCHEMA,
-  EXECUTE_BMAD_TASK_SCHEMA
+  EXECUTE_BMAD_TASK_SCHEMA,
+  CREATE_BMAD_DOCUMENT_SCHEMA
 ];
 
 // Safe tools that can be auto-executed without approval

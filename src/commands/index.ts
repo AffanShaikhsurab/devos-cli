@@ -5,6 +5,10 @@ import { modelCommand } from './definitions/model.js';
 import { clearCommand } from './definitions/clear.js';
 import { reasoningCommand } from './definitions/reasoning.js';
 import { agentCommand } from './definitions/agent.js';
+import { qaCommand } from './definitions/qa.js';
+import { repairCommand } from './definitions/repair.js';
+import { createPrdCommand } from './definitions/create-prd.js';
+import { createNextStoryCommand } from './definitions/create-next-story.js';
 
 const availableCommands: CommandDefinition[] = [
   helpCommand,
@@ -13,6 +17,10 @@ const availableCommands: CommandDefinition[] = [
   clearCommand,
   reasoningCommand,
   agentCommand,
+  qaCommand,
+  repairCommand,
+  createPrdCommand,
+  createNextStoryCommand,
 ];
 
 export function getAvailableCommands(): CommandDefinition[] {

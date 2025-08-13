@@ -229,6 +229,44 @@ export class Agent {
     });
   }
 
+  private async injectContextForInput(userInput: string): Promise<string> {
+      const implementationCommands = ['/implement', '/dev', '/develop', '/repair'];
+      const commandParts = userInput.trim().split(' ');
+      const command = commandParts[0];
+
+      if (implementationCommands.includes(command) && commandParts.length > 1) {
+          const storyFilePath = commandParts[1];
+          debugLog(`Context injection triggered for story: ${storyFilePath}`);
+          try {
+              const storyContent = await fs.readFile(storyFilePath, 'utf-8');
+              const devNotesMatch = storyContent.match(/## Dev Notes\n\n([\s\S]*?)(?=\n## |$)/);
+
+              if (devNotesMatch) {
+                  const devNotes = devNotesMatch[1];
+                  const sourceRegex = /\[Source: ([\w\/-]+\.md)[\w#]*\]/g;
+                  const requiredDocs = new Set<string>();
+                  let match;
+                  while ((match = sourceRegex.exec(devNotes)) !== null) {
+                      requiredDocs.add(match[1]);
+                  }
+
+                  let contextBlock = 'CRITICAL CONTEXT BLOCK: The following documentation is required to complete the task. You MUST use this information.\n\n';
+                  for (const docPath of requiredDocs) {
+                      const fullDocPath = path.resolve(process.cwd(), 'docs', docPath);
+                      if (await fs.pathExists(fullDocPath)) {
+                          const docContent = await fs.readFile(fullDocPath, 'utf-8');
+                          contextBlock += `--- BEGIN DOCUMENT: ${docPath} ---\n${docContent}\n--- END DOCUMENT: ${docPath} ---\n\n`;
+                      }
+                  }
+                  return `${contextBlock}\nOriginal Request: ${userInput}`;
+              }
+          } catch (error) {
+              debugLog('Could not perform automatic context injection:', error);
+          }
+      }
+      return userInput; // Return original input if no injection occurs
+  }
+
   async chat(userInput: string): Promise<void> {
     // Reset interrupt flag at the start of a new chat
     this.isInterrupted = false;
@@ -256,8 +294,8 @@ export class Agent {
       debugLog('Groq client initialized successfully');
     }
 
-    // Add user message
-    this.messages.push({ role: 'user', content: userInput });
+    const finalUserInput = await this.injectContextForInput(userInput);
+    this.messages.push({ role: 'user', content: finalUserInput });
 
     const maxIterations = 50;
     let iteration = 0;

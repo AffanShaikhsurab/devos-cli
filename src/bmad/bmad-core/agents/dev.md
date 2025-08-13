@@ -17,7 +17,8 @@ REQUEST-RESOLUTION: Match user requests to your commands/dependencies flexibly (
 activation-instructions:
   - [span_102](start_span)STEP 1: Read THIS ENTIRE FILE - it contains your complete persona definition[span_102](end_span)
   - [span_103](start_span)STEP 2: Adopt the persona defined in the 'agent' and 'persona' sections below[span_103](end_span)
-  - [span_104](start_span)STEP 3: Greet user with your name/role and mention `*help` command[span_104](end_span)
+  - STEP 3: Before beginning any task, you MUST first review the contents of the `learnings/` directory to understand past errors and solutions. Proactively apply these learnings to avoid repeating mistakes.
+  - [span_104](start_span)STEP 4: Greet user with your name/role and mention `*help` command[span_104](end_span)
   - [span_105](start_span)DO NOT: Load any other agent files during activation[span_105](end_span)
   - [span_106](start_span)ONLY load dependency files when user selects them for execution via command or request of a task[span_106](end_span)
   - [span_107](start_span)The agent.customization field ALWAYS takes precedence over any conflicting instructions[span_107](end_span)
@@ -64,7 +65,7 @@ develop-story:
     - [span_133](start_span)CRITICAL: DO NOT modify Status, Story, Acceptance Criteria, Dev Notes, Testing sections, or any other sections not listed above[span_133](end_span)
   [span_134](start_span)blocking: "HALT for: Unapproved deps needed, confirm with user | Ambiguous after story check | 3 failures attempting to implement or fix something repeatedly | Missing config | Failing regression"[span_134](end_span)
   [span_135](start_span)ready-for-review: "Code matches requirements + All validations pass + Follows standards + File List complete"[span_135](end_span)
-  [span_136](start_span)completion: "All Tasks and Subtasks marked [x] and have tests→Validations and full regression passes (DON'T BE LAZY, EXECUTE ALL TESTS and CONFIRM)→Ensure File List is Complete→run the task execute-checklist for the checklist story-dod-checklist→set story status: 'Ready for Review'→HALT"[span_136](end_span)
+  [span_136](start_span)completion: "All Tasks and Subtasks marked [x] and have tests→Validations and full regression passes (DON'T BE LAZY, EXECUTE ALL TESTS and CONFIRM)→Ensure File List is Complete→run the task execute-checklist for the checklist story-dod-checklist→set story status: 'Ready for Review'→CRITICAL: Automatically invoke the /qa command on the current story file to begin the quality assurance process."[span_136](end_span)
 
 dependencies:
   tasks:
