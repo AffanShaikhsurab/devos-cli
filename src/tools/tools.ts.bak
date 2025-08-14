@@ -4,6 +4,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { writeFile, createDirectory, displayTree } from '../utils/file-ops.js';
 import { setReadFilesTracker } from './validators.js';
+import { projectContext } from '../utils/project-context.js';
 
 const execAsync = promisify(exec);
 
@@ -45,7 +46,9 @@ export function getReadFilesTracker(): Set<string> {
 }
 
 // Initialize validator with readFiles tracker
-setReadFilesTracker(readFiles);
+export function initializeTools() {
+  setReadFilesTracker(readFiles);
+}
 
 /**
  * Format key parameters for tool call display
@@ -115,12 +118,21 @@ export function createToolResponse(success: boolean, data?: any, message: string
   return response;
 }
 
+/*
 /**
  * Read the contents of a file, optionally specifying line range
  */
+/*
 export async function readFile(filePath: string, startLine?: number, endLine?: number): Promise<ToolResult> {
   try {
-    const resolvedPath = path.resolve(filePath);
+    // Sanitize the user-provided path to prevent directory traversal attacks
+    const safeRelativePath = path.normalize(filePath).replace(/^(\.\.(\/|\\|$))+/, '');
+    const resolvedPath = path.join(projectContext.bmadDir, safeRelativePath);
+
+    // Security Check: Ensure the final path is still within the project's .bmad directory
+    if (!resolvedPath.startsWith(projectContext.bmadDir)) {
+      return createToolResponse(false, undefined, '', 'Error: Path traversal detected. Access denied.');
+    }
 
     // Check if file exists
     try {
@@ -176,13 +188,20 @@ export async function readFile(filePath: string, startLine?: number, endLine?: n
     return createToolResponse(false, undefined, '', 'Error: Failed to read file');
   }
 }
+*/
 
 /**
  * Create a new file or directory with specified content
  */
+/*
 export async function createFile(filePath: string, content: string, fileType: string = 'file', overwrite: boolean = false): Promise<ToolResult> {
   try {
-    const targetPath = path.resolve(filePath);
+    const safeRelativePath = path.normalize(filePath).replace(/^(\.\.(\/|\\|$))+/, '');
+    const targetPath = path.join(projectContext.bmadDir, safeRelativePath);
+
+    if (!targetPath.startsWith(projectContext.bmadDir)) {
+      return createToolResponse(false, undefined, '', 'Error: Path traversal detected. Access denied.');
+    }
 
     // Check if file exists and handle overwrite
     const exists = await fs.promises.access(targetPath).then(() => true).catch(() => false);
@@ -212,14 +231,21 @@ export async function createFile(filePath: string, content: string, fileType: st
     return createToolResponse(false, undefined, '', 'Error: Failed to create file or directory');
   }
 }
+*/
 
 /**
  * Edit a file by replacing exact text strings
  * Note: Arguments are pre-validated by the validation system before this function is called
  */
+/*
 export async function editFile(filePath: string, oldText: string, newText: string, replaceAll: boolean = false): Promise<ToolResult> {
   try {
-    const resolvedPath = path.resolve(filePath);
+    const safeRelativePath = path.normalize(filePath).replace(/^(\.\.(\/|\\|$))+/, '');
+    const resolvedPath = path.join(projectContext.bmadDir, safeRelativePath);
+
+    if (!resolvedPath.startsWith(projectContext.bmadDir)) {
+      return createToolResponse(false, undefined, '', 'Error: Path traversal detected. Access denied.');
+    }
 
     // Read current content (validation already confirmed file exists and was read)
     const originalContent = await fs.promises.readFile(resolvedPath, 'utf-8');
@@ -246,23 +272,19 @@ export async function editFile(filePath: string, oldText: string, newText: strin
     return createToolResponse(false, undefined, '', `Error: Failed to edit file - ${error}`);
   }
 }
+*/
 
 /**
  * Delete a file or directory with safety checks
  */
+/*
 export async function deleteFile(filePath: string, recursive: boolean = false): Promise<ToolResult> {
   try {
-    const targetPath = path.resolve(filePath);
-    const currentWorkingDir = path.resolve(process.cwd());
+    const safeRelativePath = path.normalize(filePath).replace(/^(\.\.(\/|\\|$))+/, '');
+    const targetPath = path.join(projectContext.bmadDir, safeRelativePath);
 
-    // Safety check 1: Never delete the root directory itself
-    if (targetPath === currentWorkingDir) {
-      return createToolResponse(false, undefined, '', 'Error: Cannot delete the root project directory');
-    }
-
-    // Safety check 2: Never delete anything outside the current working directory
-    if (!targetPath.startsWith(currentWorkingDir)) {
-      return createToolResponse(false, undefined, '', 'Error: Cannot delete files outside the project directory');
+    if (!targetPath.startsWith(projectContext.bmadDir)) {
+      return createToolResponse(false, undefined, '', 'Error: Path traversal detected. Access denied.');
     }
 
     const exists = await fs.promises.access(targetPath).then(() => true).catch(() => false);
@@ -293,13 +315,20 @@ export async function deleteFile(filePath: string, recursive: boolean = false): 
     return createToolResponse(false, undefined, '', 'Error: Failed to delete');
   }
 }
+*/
 
 /**
  * List files and directories in a path with tree-style display
  */
+/*
 export async function listFiles(directory: string = '.', pattern: string = '*', recursive: boolean = false, showHidden: boolean = false): Promise<ToolResult> {
   try {
-    const dirPath = path.resolve(directory);
+    const safeRelativePath = path.normalize(directory).replace(/^(\.\.(\/|\\|$))+/, '');
+    const dirPath = path.join(projectContext.bmadDir, safeRelativePath);
+
+    if (!dirPath.startsWith(projectContext.bmadDir)) {
+      return createToolResponse(false, undefined, '', 'Error: Path traversal detected. Access denied.');
+    }
 
     const exists = await fs.promises.access(dirPath).then(() => true).catch(() => false);
     if (!exists) {
@@ -320,10 +349,12 @@ export async function listFiles(directory: string = '.', pattern: string = '*', 
     return createToolResponse(false, undefined, '', 'Error: Failed to list files');
   }
 }
+*/
 
 /**
  * Search for text patterns in files with advanced filtering and matching options
  */
+/*
 export async function searchFiles(
   pattern: string,
   filePattern: string = '*',
@@ -469,6 +500,7 @@ export async function searchFiles(
     return createToolResponse(false, undefined, '', 'Error: Failed to search files');
   }
 }
+*/
 
 // Helper interfaces for search results
 interface SearchMatch {
@@ -587,6 +619,7 @@ function isBinaryFile(filename: string): boolean {
 /**
  * Execute a shell command or run code
  */
+/*
 export async function executeCommand(command: string, commandType: string, workingDirectory?: string, timeout: number = 30000): Promise<ToolResult> {
   try {
     // Validate command type
@@ -637,10 +670,12 @@ export async function executeCommand(command: string, commandType: string, worki
     return createToolResponse(false, undefined, '', 'Error: Failed to execute command');
   }
 }
+*/
 
 /**
  * Create a task list of subtasks to complete the user's request
  */
+/*
 export async function createTasks(userQuery: string, tasks: Task[]): Promise<ToolResult> {
   try {
     // Validate task structure
@@ -686,10 +721,12 @@ export async function createTasks(userQuery: string, tasks: Task[]): Promise<Too
     return createToolResponse(false, undefined, '', `Error: Failed to create tasks - ${error}`);
   }
 }
+*/
 
 /**
  * Update the status of one or more tasks in the task list
  */
+/*
 export async function updateTasks(taskUpdates: TaskUpdate[]): Promise<ToolResult> {
   try {
     if (!currentTaskList) {
@@ -762,70 +799,71 @@ export async function updateTasks(taskUpdates: TaskUpdate[]): Promise<ToolResult
     return createToolResponse(false, undefined, '', `Error: Failed to update tasks - ${error}`);
   }
 }
+*/
 
 // Tool Registry: maps tool names to functions
-export const TOOL_REGISTRY = {
-  read_file: readFile,
-  create_file: createFile,
-  edit_file: editFile,
-  delete_file: deleteFile,
-  list_files: listFiles,
-  search_files: searchFiles,
-  execute_command: executeCommand,
-  create_tasks: createTasks,
-  update_tasks: updateTasks,
-};
+// export const TOOL_REGISTRY = {
+//   read_file: readFile,
+//   create_file: createFile,
+//   edit_file: editFile,
+//   delete_file: deleteFile,
+//   list_files: listFiles,
+//   search_files: searchFiles,
+//   execute_command: executeCommand,
+//   create_tasks: createTasks,
+//   update_tasks: updateTasks,
+// };
 
 /**
  * Execute a tool by name with given arguments
  */
-export async function executeTool(toolName: string, toolArgs: Record<string, any>): Promise<ToolResult> {
-  if (!(toolName in TOOL_REGISTRY)) {
-    return createToolResponse(false, undefined, '', 'Error: Unknown tool');
-  }
+// export async function executeTool(toolName: string, toolArgs: Record<string, any>): Promise<ToolResult> {
+//   if (!(toolName in TOOL_REGISTRY)) {
+//     return createToolResponse(false, undefined, '', 'Error: Unknown tool');
+//   }
 
-  try {
-    const toolFunction = (TOOL_REGISTRY as any)[toolName];
+//   try {
+//     const toolFunction = (TOOL_REGISTRY as any)[toolName];
     
-    // Call the function with the appropriate arguments based on the tool
-    switch (toolName) {
-      case 'read_file':
-        return await toolFunction(toolArgs.file_path, toolArgs.start_line, toolArgs.end_line);
-      case 'create_file':
-        return await toolFunction(toolArgs.file_path, toolArgs.content, toolArgs.file_type, toolArgs.overwrite);
-      case 'edit_file':
-        return await toolFunction(toolArgs.file_path, toolArgs.old_text, toolArgs.new_text, toolArgs.replace_all);
-      case 'delete_file':
-        return await toolFunction(toolArgs.file_path, toolArgs.recursive);
-      case 'list_files':
-        return await toolFunction(toolArgs.directory, toolArgs.pattern, toolArgs.recursive, toolArgs.show_hidden);
-      case 'search_files':
-        return await toolFunction(
-          toolArgs.pattern,
-          toolArgs.file_pattern,
-          toolArgs.directory,
-          toolArgs.case_sensitive,
-          toolArgs.pattern_type,
-          toolArgs.file_types,
-          toolArgs.exclude_dirs,
-          toolArgs.exclude_files,
-          toolArgs.max_results,
-          toolArgs.context_lines,
-          toolArgs.group_by_file
-        );
-      case 'execute_command':
-        return await toolFunction(toolArgs.command, toolArgs.command_type, toolArgs.working_directory, toolArgs.timeout);
-      case 'create_tasks':
-        return await toolFunction(toolArgs.user_query, toolArgs.tasks);
-      case 'update_tasks':
-        return await toolFunction(toolArgs.task_updates);
-      default:
-        return createToolResponse(false, undefined, '', 'Error: Tool not implemented');
-    }
-  } catch (error) {
-    if (error instanceof TypeError) {
-      return createToolResponse(false, undefined, '', 'Error: Invalid tool arguments');
-    }
-    return createToolResponse(false, undefined, '', 'Error: Unexpected tool error');
-  }
-}
+//     // Call the function with the appropriate arguments based on the tool
+//     switch (toolName) {
+//       case 'read_file':
+//         return await toolFunction(toolArgs.file_path, toolArgs.start_line, toolArgs.end_line);
+//       case 'create_file':
+//         return await toolFunction(toolArgs.file_path, toolArgs.content, toolArgs.file_type, toolArgs.overwrite);
+//       case 'edit_file':
+//         return await toolFunction(toolArgs.file_path, toolArgs.old_text, toolArgs.new_text, toolArgs.replace_all);
+//       case 'delete_file':
+//         return await toolFunction(toolArgs.file_path, toolArgs.recursive);
+//       case 'list_files':
+//         return await toolFunction(toolArgs.directory, toolArgs.pattern, toolArgs.recursive, toolArgs.show_hidden);
+//       case 'search_files':
+//         return await toolFunction(
+//           toolArgs.pattern,
+//           toolArgs.file_pattern,
+//           toolArgs.directory,
+//           toolArgs.case_sensitive,
+//           toolArgs.pattern_type,
+//           toolArgs.file_types,
+//           toolArgs.exclude_dirs,
+//           toolArgs.exclude_files,
+//           toolArgs.max_results,
+//           toolArgs.context_lines,
+//           toolArgs.group_by_file
+//         );
+//       case 'execute_command':
+//         return await toolFunction(toolArgs.command, toolArgs.command_type, toolArgs.working_directory, toolArgs.timeout);
+//       case 'create_tasks':
+//         return await toolFunction(toolArgs.user_query, toolArgs.tasks);
+//       case 'update_tasks':
+//         return await toolFunction(toolArgs.task_updates);
+//       default:
+//         return createToolResponse(false, undefined, '', 'Error: Tool not implemented');
+//     }
+//   } catch (error) {
+//     if (error instanceof TypeError) {
+//       return createToolResponse(false, undefined, '', 'Error: Invalid tool arguments');
+//     }
+//     return createToolResponse(false, undefined, '', 'Error: Unexpected tool error');
+//   }
+// }

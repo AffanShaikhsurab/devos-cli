@@ -1,7 +1,7 @@
 import { Box, Text } from 'ink';
 import { ToolExecution } from '../../hooks/useAgent.js';
 import DiffPreview from './DiffPreview.js';
-import { formatToolParams } from '../../../tools/tools.js';
+import { formatToolParams } from '../../../tools/param-formatter.js';
 
 interface ToolHistoryItemProps {
   execution: ToolExecution;

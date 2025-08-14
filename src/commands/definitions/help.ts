@@ -4,7 +4,7 @@ import { getAvailableCommands } from '../index.js';
 export const helpCommand: CommandDefinition = {
   command: 'help',
   description: 'Show help and available commands',
-  handler: ({ addMessage }: CommandContext) => {
+  handler: ({ addMessage }: CommandContext, args: string[]) => {
     const commands = getAvailableCommands();
     const commandList = commands.map(cmd => `/${cmd.command} - ${cmd.description}`).join('\n');
     
