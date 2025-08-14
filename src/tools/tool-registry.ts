@@ -8,7 +8,7 @@ import {
   setReadFileTrackerInstance,
 } from './file-tools.js';
 import { executeCommand } from './process-tools.js';
-import { createTasks, updateTasks, executeBmadTask, createBmadDocument } from './task-tools.js';
+import { createTasks, updateTasks, executeBmadTask, createBmadDocument, getTasks, clearTasks } from './task-tools.js';
 import { setReadFilesTracker } from './validators.js';
 import { ToolResult, createToolResponse } from './tool-utils.js';
 
@@ -32,6 +32,8 @@ export const TOOL_REGISTRY = {
   update_tasks: updateTasks,
   execute_bmad_task: executeBmadTask,
   create_bmad_document: createBmadDocument,
+  get_tasks: getTasks,
+  clear_tasks: clearTasks,
 };
 
 export async function executeTool(toolName: string, toolArgs: Record<string, any>): Promise<ToolResult> {
@@ -77,6 +79,10 @@ export async function executeTool(toolName: string, toolArgs: Record<string, any
         return await toolFunction(toolArgs.task_id, toolArgs.params);
       case 'create_bmad_document':
         return await toolFunction(toolArgs.template_id, toolArgs.project_name);
+  case 'get_tasks':
+    return await toolFunction();
+  case 'clear_tasks':
+    return await toolFunction();
       default:
         return createToolResponse(false, undefined, '', 'Error: Tool not implemented');
     }
