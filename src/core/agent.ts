@@ -1,3 +1,4 @@
+import * as os from 'os';
 import Groq from 'groq-sdk';
 import { executeTool } from '../tools/tool-registry.js';
 import { validateReadBeforeEdit, getReadBeforeEditError } from '../tools/validators.js';
@@ -98,25 +99,38 @@ export class Agent {
     const __dirname = path.dirname(__filename);
     const isDist = __filename.includes('dist');
 
+    // --- Start of New Code ---
+    // Detect the host operating system
+    const platform = os.platform();
+    let osName;
+    if (platform === 'win32') {
+      osName = 'Windows';
+    } else if (platform === 'darwin') {
+      osName = 'macOS';
+    } else {
+      osName = 'Linux';
+    }
+    // --- End of New Code ---
+
     // Base prompt for the Groq CLI
     let systemMessage = `You are a coding assistant powered by ${this.model} on Groq, operating within the BMad-Method framework.`;
+
+    // --- Start of New Code ---
+    // Inject the detected OS into the system prompt as a critical instruction
+    systemMessage += `\n\nCRITICAL ENVIRONMENT CONTEXT: You are operating in a ${osName} environment. You MUST generate shell commands compatible with this environment. For example, use 'dir' for listing files on Windows and 'ls' on macOS/Linux.`;
+    // --- End of New Code ---
 
     if (this.activeBmadAgent) {
       try {
         const bmadBasePath = isDist ?
             path.resolve(__dirname, '..', '..', 'src', 'bmad') :
             path.resolve(__dirname, '..', 'bmad');
-
-        // 1. Load the agent's markdown file
         const agentFilePath = path.join(bmadBasePath, 'bmad-core', 'agents', `${this.activeBmadAgent}.md`);
         const agentContent = await fs.readFile(agentFilePath, 'utf-8');
 
-        // 2. Extract the YAML configuration from the agent file
         const yamlContent = extractYamlFromAgent(agentContent);
         if (yamlContent) {
             const agentConfig = yaml.load(yamlContent) as any;
-
-            // 3. Prepend the agent's persona and core principles
             const persona = agentConfig.persona;
             if (persona) {
                 systemMessage += `\n\nCRITICAL: You are now operating as the ${persona.role}.
@@ -132,9 +146,9 @@ export class Agent {
     }
 
     // Add BMad's core operational rules and the CLI's tool usage rules
-    systemMessage += `\n\nFollow the BMad workflow: planning and documentation come first, followed by sequential, story-driven development. Use the high-level BMad tasks available to you.`;
-    systemMessage += `\nCRITICAL CONTEXT PROVIDED: When available, necessary context from PRD and Architecture documents will be provided at the beginning of the prompt. You MUST use this context for implementation and not request it again.`;
-    systemMessage += `\n\nCRITICAL OPERATING RULE: All file operations and data storage (implementations, learnings, docs, stories, etc.) MUST occur within the project's local .bmad/ directory. Your tools are already configured to enforce this securely.`;
+    systemMessage += `\n\nFollow the BMad workflow: planning and documentation come first, followed by sequential, story-driven development.`;
+    systemMessage += `\nCRITICAL CONTEXT PROVIDED: When available, necessary context from PRD and Architecture documents will be provided at the beginning of the prompt.`;
+    systemMessage += `\nCRITICAL OPERATING RULE: All file operations and data storage (implementations, learnings, docs, stories, etc.) MUST occur within the project's local .bmad/ directory.`;
 
     return systemMessage;
   }
