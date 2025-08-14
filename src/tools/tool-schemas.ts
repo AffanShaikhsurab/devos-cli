@@ -359,6 +359,68 @@ export const UPDATE_TASKS_SCHEMA: ToolSchema = {
   }
 };
 
+export const EXECUTE_BMAD_TASK_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'execute_bmad_task',
+    description: 'Executes a structured BMad task like creating a document from a template or preparing the next development story based on its markdown definition.',
+    parameters: {
+      type: 'object',
+      properties: {
+        task_id: { type: 'string', description: 'The ID of the task to run (e.g., "create-doc", "create-next-story").' },
+        params: {
+          type: 'object',
+          description: 'An object of parameters for the task, such as { "template": "prd-tmpl.yaml" } for create-doc.'
+        }
+      },
+      required: ['task_id']
+    }
+  }
+};
+
+export const CREATE_BMAD_DOCUMENT_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'create_bmad_document',
+    description: 'Generates a complete document by processing a BMad YAML template.',
+    parameters: {
+      type: 'object',
+      properties: {
+        template_id: { type: 'string', description: 'The filename of the template to use (e.g., "prd-tmpl.yaml").' },
+        project_name: { type: 'string', description: 'The name of the project for the document title.' },
+      },
+      required: ['template_id', 'project_name']
+    }
+  }
+};
+
+// Add these two new schemas before the ALL_TOOL_SCHEMAS export
+
+export const GET_TASKS_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'get_tasks',
+    description: 'Reads and returns the current multi-step task list from the session plan. The agent should call this to remind itself of the plan.',
+    parameters: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  }
+};
+
+export const CLEAR_TASKS_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'clear_tasks',
+    description: 'Clears and deletes the current multi-step task list. The agent should call this when a plan is complete or needs to be abandoned.',
+    parameters: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  }
+};
 // All tools combined
 export const ALL_TOOL_SCHEMAS = [
   READ_FILE_SCHEMA,
@@ -369,7 +431,11 @@ export const ALL_TOOL_SCHEMAS = [
   LIST_FILES_SCHEMA,
   CREATE_TASKS_SCHEMA,
   UPDATE_TASKS_SCHEMA,
-  EXECUTE_COMMAND_SCHEMA
+  EXECUTE_COMMAND_SCHEMA,
+  EXECUTE_BMAD_TASK_SCHEMA,
+  CREATE_BMAD_DOCUMENT_SCHEMA,
+  GET_TASKS_SCHEMA,
+  CLEAR_TASKS_SCHEMA
 ];
 
 // Safe tools that can be auto-executed without approval

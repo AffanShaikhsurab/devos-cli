@@ -2,9 +2,18 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
+export interface McpServerConfig {
+  name: string;
+  command: string;
+  args: string[];
+  env?: Record<string, string>;
+  port?: number;
+}
+
 interface Config {
   groqApiKey?: string;
   defaultModel?: string;
+  mcpServers?: McpServerConfig[];
 }
 
 const CONFIG_DIR = '.groq'; // In home directory
@@ -114,6 +123,96 @@ export class ConfigManager {
       });
     } catch (error) {
       throw new Error(`Failed to save default model: ${error}`);
+    }
+  }
+
+  public getMcpServers(): McpServerConfig[] {
+    try {
+      if (!fs.existsSync(this.configPath)) {
+        return [];
+      }
+
+      const configData = fs.readFileSync(this.configPath, 'utf8');
+      const config: Config = JSON.parse(configData);
+      return config.mcpServers || [];
+    } catch (error) {
+      console.warn('Failed to read MCP servers:', error);
+      return [];
+    }
+  }
+
+  public getMcpServersRecord(): Record<string, McpServerConfig> {
+    const servers = this.getMcpServers();
+    const record: Record<string, McpServerConfig> = {};
+    for (const server of servers) {
+      record[server.name] = server;
+    }
+    return record;
+  }
+
+  public addMcpServer(server: McpServerConfig): void {
+    try {
+      this.ensureConfigDir();
+
+      let config: Config = {};
+      if (fs.existsSync(this.configPath)) {
+        const configData = fs.readFileSync(this.configPath, 'utf8');
+        config = JSON.parse(configData);
+      }
+
+      config.mcpServers = config.mcpServers || [];
+      
+      // Remove existing server with same name if it exists
+      config.mcpServers = config.mcpServers.filter(s => s.name !== server.name);
+      
+      // Add the new server
+      config.mcpServers.push(server);
+
+      fs.writeFileSync(this.configPath, JSON.stringify(config, null, 2), {
+        mode: 0o600 // Read/write for owner only
+      });
+    } catch (error) {
+      throw new Error(`Failed to save MCP server: ${error}`);
+    }
+  }
+
+  public removeMcpServer(name: string): void {
+    try {
+      if (!fs.existsSync(this.configPath)) {
+        return;
+      }
+
+      const configData = fs.readFileSync(this.configPath, 'utf8');
+      const config: Config = JSON.parse(configData);
+      
+      if (config.mcpServers) {
+        config.mcpServers = config.mcpServers.filter(s => s.name !== name);
+        
+        fs.writeFileSync(this.configPath, JSON.stringify(config, null, 2), {
+          mode: 0o600 // Read/write for owner only
+        });
+      }
+    } catch (error) {
+      throw new Error(`Failed to remove MCP server: ${error}`);
+    }
+  }
+
+  public removeAllMcpServers(): void {
+    try {
+      if (!fs.existsSync(this.configPath)) {
+        return;
+      }
+
+      const configData = fs.readFileSync(this.configPath, 'utf8');
+      const config: Config = JSON.parse(configData);
+      
+      config.mcpServers = [];
+      
+      fs.writeFileSync(this.configPath, JSON.stringify(config, null, 2), {
+        mode: 0o600 // Read/write for owner only
+      });
+    } catch (error) {
+      throw new Error(`Failed to remove all MCP servers: ${error}`);
     }
   }
 }

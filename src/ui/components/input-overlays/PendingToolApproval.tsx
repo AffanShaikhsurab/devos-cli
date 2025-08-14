@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import DiffPreview from '../display/DiffPreview.js';
-import { formatToolParams } from '../../../tools/tools.js';
+import { formatToolParams } from '../../../tools/param-formatter.js';
 import { DANGEROUS_TOOLS } from '../../../tools/tool-schemas.js';
 
 interface PendingToolApprovalProps {

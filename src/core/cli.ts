@@ -5,6 +5,7 @@ import { render } from 'ink';
 import React from 'react';
 import { Agent } from './agent.js';
 import App from '../ui/App.js';
+import { initializeTools } from '../tools/tool-registry.js';
 
 const program = new Command();
 
@@ -32,6 +33,9 @@ async function startChat(
 ░░██████ ░░██████ ░░███████ ░░██████  
  ░░░░░░   ░░░░░░   ░░░░░░░░  ░░░░░░   
 `));
+
+  // Initialize all tool dependencies
+  initializeTools();
     
   let defaultModel = 'moonshotai/kimi-k2-instruct';
   try {
