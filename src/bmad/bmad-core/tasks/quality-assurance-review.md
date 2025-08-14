@@ -21,9 +21,9 @@ To meticulously review a completed development story, validate its correctness a
     - If everything is correct and all tests pass: Proceed to the next step.
 
 ### 3. Generate Implementation Documentation
-- **Action:** If validation is successful, create the structured documentation for the `implementations/` folder.
+- **Action:** If validation is successful, create the structured documentation for the the project's local `.bmad/implementations/` directory.
 - **Get Story ID & Title:** Extract the unique story ID (e.g., "1.2") and Title from the story file.
-- **Create Story Folder:** Create a new directory inside `implementations/` named after the story ID (e.g., `implementations/1.2/`).
+- **Create Story Folder:** Create a new directory inside the project's local `.bmad/implementations/` directory. named after the story ID (e.g., `implementations/1.2/`).
 - **Create Notes File:** Inside the new folder, create a single file named `implementation_notes.md`.
 - **Tool:** `create_file`
 

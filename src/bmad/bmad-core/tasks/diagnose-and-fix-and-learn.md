@@ -11,7 +11,7 @@ To systematically analyze a failed code implementation by first checking for kno
 
 ### 1. Check for Known Solutions
 - **Action:** Analyze the provided error log. Formulate a concise, searchable summary of the error (e.g., "TypeError: cannot read properties of undefined").
-- **Action:** Search through all `.yaml` files in the `learnings/` directory. For each file, read its `error_summary` field to see if it matches the current problem.
+- **Action:** Search through all `.yaml` files in the the project's local `.bmad/learnings/` directory. For each file, read its `error_summary` field to see if it matches the current problem.
 - **Tool:** `list_files`, `read_file`
 - **Decision:**
     - If a matching solution is found in a learning file: Report the finding and the stored solution to the user. Use the `successful_solution.patch` from the YAML file to formulate an `edit_file` tool call. **Proceed directly to Step 4: Propose the Patch**.

@@ -9,6 +9,7 @@ import { qaCommand } from './definitions/qa.js';
 import { repairCommand } from './definitions/repair.js';
 import { createPrdCommand } from './definitions/create-prd.js';
 import { createNextStoryCommand } from './definitions/create-next-story.js';
+import { bmadInitCommand } from './definitions/bmad-init.js';
 
 const availableCommands: CommandDefinition[] = [
   helpCommand,
@@ -21,6 +22,7 @@ const availableCommands: CommandDefinition[] = [
   repairCommand,
   createPrdCommand,
   createNextStoryCommand,
+  bmadInitCommand,
 ];
 
 export function getAvailableCommands(): CommandDefinition[] {

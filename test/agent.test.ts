@@ -1,6 +1,12 @@
 import test from 'ava';
 import { Agent } from '../src/core/agent.js';
 
+import { initializeTools } from '../src/tools/tool-registry.js';
+
+test.before(t => {
+  initializeTools();
+});
+
 test('Agent persona switching', async t => {
   const agent = await Agent.create('groq-llama3-70b', 0.1, null, false);
 

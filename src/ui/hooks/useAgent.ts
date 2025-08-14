@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Agent } from '../../core/agent.js';
 import { DANGEROUS_TOOLS, APPROVAL_REQUIRED_TOOLS } from '../../tools/tool-schemas.js';
+import { dbManager } from '../../utils/database.js';
 
 export interface ChatMessage {
   id: string;
@@ -28,7 +29,7 @@ export function useAgent(
   onResumeRequest?: () => void,
   onCompleteRequest?: () => void
 ) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => dbManager.getMessages());
   const [userMessageHistory, setUserMessageHistory] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentToolExecution, setCurrentToolExecution] = useState<ToolExecution | null>(null);
@@ -66,6 +67,7 @@ export function useAgent(
       id: Math.random().toString(36).substr(2, 9),
       timestamp: new Date(),
     };
+    dbManager.addMessage(newMessage);
     setMessages(prev => [...prev, newMessage]);
     return newMessage.id;
   }, []);
@@ -316,6 +318,7 @@ export function useAgent(
   }, [sessionAutoApprove, agent]);
 
   const clearHistory = useCallback(() => {
+    dbManager.clearHistory();
     setMessages([]);
     setUserMessageHistory([]);
     // Don't reset sessionAutoApprove, it should persist across /clear

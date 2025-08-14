@@ -1,5 +1,5 @@
 import Groq from 'groq-sdk';
-import { executeTool } from '../tools/tools.js';
+import { executeTool } from '../tools/tool-registry.js';
 import { validateReadBeforeEdit, getReadBeforeEditError } from '../tools/validators.js';
 import { ALL_TOOL_SCHEMAS, DANGEROUS_TOOLS, APPROVAL_REQUIRED_TOOLS } from '../tools/tool-schemas.js';
 import { ConfigManager } from '../utils/local-settings.js';
@@ -134,6 +134,7 @@ export class Agent {
     // Add BMad's core operational rules and the CLI's tool usage rules
     systemMessage += `\n\nFollow the BMad workflow: planning and documentation come first, followed by sequential, story-driven development. Use the high-level BMad tasks available to you.`;
     systemMessage += `\nCRITICAL CONTEXT PROVIDED: When available, necessary context from PRD and Architecture documents will be provided at the beginning of the prompt. You MUST use this context for implementation and not request it again.`;
+    systemMessage += `\n\nCRITICAL OPERATING RULE: All file operations and data storage (implementations, learnings, docs, stories, etc.) MUST occur within the project's local .bmad/ directory. Your tools are already configured to enforce this securely.`;
 
     return systemMessage;
   }
