@@ -69,19 +69,19 @@ export function useAgent(
     };
 
     setMessages(prev => {
-        // Check if a message with the same content and from the same role already exists
-        const messageExists = prev.slice(-5).some(
-            (msg) =>
-                msg.role === newMessage.role &&
-                msg.content === newMessage.content
-        );
+        // Get the most recent message, if it exists
+        const lastMessage = prev.length > 0 ? prev[prev.length - 1] : null;
 
-        if (!messageExists) {
-            dbManager.addMessage(newMessage);
-            return [...prev, newMessage];
+        // Check if the last message is an exact duplicate of the new one.
+        // This is a lightweight way to prevent the same message event from being processed twice in a row.
+        if (lastMessage && lastMessage.role === newMessage.role && lastMessage.content === newMessage.content) {
+            // It's a duplicate of the immediately preceding message, so we ignore it.
+            return prev;
         }
 
-        return prev;
+        // If it's not a duplicate, add it to the database and the state.
+        dbManager.addMessage(newMessage);
+        return [...prev, newMessage];
     });
 
     return newMessage.id;
