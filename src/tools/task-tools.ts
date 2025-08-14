@@ -120,3 +120,23 @@ export async function updateTasks(taskUpdates: TaskUpdate[]): Promise<ToolResult
     return createToolResponse(false, undefined, '', `Error: Failed to update tasks - ${error}`);
   }
 }
+
+/**
+ * Placeholder for executing a structured BMad task.
+ * NOTE: This tool is defined in the schema but not yet fully implemented.
+ */
+export async function executeBmadTask(taskId: string, params: Record<string, any>): Promise<ToolResult> {
+  // To be implemented: This would involve loading the task definition from a file
+  // and executing its steps.
+  return createToolResponse(false, undefined, '', `Error: Tool 'execute_bmad_task' is defined but not yet implemented.`);
+}
+
+/**
+ * Placeholder for creating a BMad document from a template.
+ * NOTE: This tool is defined in the schema but not yet fully implemented.
+ */
+export async function createBmadDocument(templateId: string, projectName: string): Promise<ToolResult> {
+  // To be implemented: This would involve processing a YAML template to generate
+  // a full markdown document.
+  return createToolResponse(false, undefined, '', `Error: Tool 'create_bmad_document' is defined but not yet implemented.`);
+}
