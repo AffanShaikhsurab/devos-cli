@@ -67,8 +67,23 @@ export function useAgent(
       id: Math.random().toString(36).substr(2, 9),
       timestamp: new Date(),
     };
-    dbManager.addMessage(newMessage);
-    setMessages(prev => [...prev, newMessage]);
+
+    setMessages(prev => {
+        // Check if a message with the same content and from the same role already exists
+        const messageExists = prev.slice(-5).some(
+            (msg) =>
+                msg.role === newMessage.role &&
+                msg.content === newMessage.content
+        );
+
+        if (!messageExists) {
+            dbManager.addMessage(newMessage);
+            return [...prev, newMessage];
+        }
+
+        return prev;
+    });
+
     return newMessage.id;
   }, []);
 
