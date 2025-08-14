@@ -394,6 +394,33 @@ export const CREATE_BMAD_DOCUMENT_SCHEMA: ToolSchema = {
   }
 };
 
+// Add these two new schemas before the ALL_TOOL_SCHEMAS export
+
+export const GET_TASKS_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'get_tasks',
+    description: 'Reads and returns the current multi-step task list from the session plan. The agent should call this to remind itself of the plan.',
+    parameters: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  }
+};
+
+export const CLEAR_TASKS_SCHEMA: ToolSchema = {
+  type: 'function',
+  function: {
+    name: 'clear_tasks',
+    description: 'Clears and deletes the current multi-step task list. The agent should call this when a plan is complete or needs to be abandoned.',
+    parameters: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  }
+};
 // All tools combined
 export const ALL_TOOL_SCHEMAS = [
   READ_FILE_SCHEMA,
@@ -406,7 +433,9 @@ export const ALL_TOOL_SCHEMAS = [
   UPDATE_TASKS_SCHEMA,
   EXECUTE_COMMAND_SCHEMA,
   EXECUTE_BMAD_TASK_SCHEMA,
-  CREATE_BMAD_DOCUMENT_SCHEMA
+  CREATE_BMAD_DOCUMENT_SCHEMA,
+  GET_TASKS_SCHEMA,
+  CLEAR_TASKS_SCHEMA
 ];
 
 // Safe tools that can be auto-executed without approval

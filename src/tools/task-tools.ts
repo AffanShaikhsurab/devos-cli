@@ -1,11 +1,19 @@
+//
+// FILE: src/tools/task-tools.ts
+//
 import { createToolResponse, ToolResult } from './tool-utils.js';
+import { projectContext } from '../utils/project-context.js';
+import * as fs from 'fs-extra';
+import * as path from 'path';
 
+// Define the structure of an update for a single task
 interface TaskUpdate {
   id: string;
   status: 'pending' | 'in_progress' | 'completed';
   notes?: string;
 }
 
+// Define the structure of a single task
 interface Task {
   id: string;
   description: string;
@@ -14,13 +22,12 @@ interface Task {
   updated_at?: string;
 }
 
-let currentTaskList: {
-  user_query: string;
-  tasks: Task[];
-  created_at: string;
-} | null = null;
-
+/**
+ * Creates a new task list and saves it to a persistent file.
+ * This function will overwrite any existing plan.
+ */
 export async function createTasks(userQuery: string, tasks: Task[]): Promise<ToolResult> {
+  const planPath = path.join(projectContext.bmadDir, 'session_plan.json');
   try {
     for (let i = 0; i < tasks.length; i++) {
       const task = tasks[i];
@@ -35,41 +42,40 @@ export async function createTasks(userQuery: string, tasks: Task[]): Promise<Too
       }
     }
 
-    currentTaskList = {
+    const taskList = {
       user_query: userQuery,
       tasks: tasks,
       created_at: new Date().toISOString()
     };
 
-    const snapshot = {
-      user_query: currentTaskList.user_query,
-      tasks: currentTaskList.tasks.map(task => ({ ...task })),
-      created_at: currentTaskList.created_at
-    };
+    // Write the new plan to the file system as a JSON file
+    await fs.writeJson(planPath, taskList, { spaces: 2 });
 
     return createToolResponse(
       true,
-      snapshot,
-      `Created task list with ${tasks.length} tasks for: ${userQuery}`
+      taskList,
+      `Created and saved a task list with ${tasks.length} tasks for: ${userQuery}`
     );
-
   } catch (error) {
-    return createToolResponse(false, undefined, '', `Error: Failed to create tasks - ${error}`);
+    return createToolResponse(false, undefined, '', `Error: Failed to create and save tasks - ${error}`);
   }
 }
 
+/**
+ * Updates tasks in the persistent session plan file.
+ */
 export async function updateTasks(taskUpdates: TaskUpdate[]): Promise<ToolResult> {
+  const planPath = path.join(projectContext.bmadDir, 'session_plan.json');
   try {
-    if (!currentTaskList) {
+    // Check if a plan file exists before trying to update it
+    const exists = await fs.pathExists(planPath);
+    if (!exists) {
       return createToolResponse(false, undefined, '', 'Error: No task list exists. Create tasks first.');
     }
 
-    const updatesMade: Array<{
-      id: string;
-      description: string;
-      old_status: string;
-      new_status: string;
-    }> = [];
+    // Read the existing plan from the file
+    const taskList = await fs.readJson(planPath);
+    const updatesMade: Array<{ id: string; description: string; old_status: string; new_status: string; }> = [];
 
     for (const update of taskUpdates) {
       if (!update.id || !update.status) {
@@ -80,7 +86,7 @@ export async function updateTasks(taskUpdates: TaskUpdate[]): Promise<ToolResult
       }
 
       let taskFound = false;
-      for (const task of currentTaskList.tasks) {
+      for (const task of taskList.tasks) {
         if (task.id === update.id) {
           const oldStatus = task.status;
           task.status = update.status;
@@ -104,20 +110,51 @@ export async function updateTasks(taskUpdates: TaskUpdate[]): Promise<ToolResult
       }
     }
 
-    const snapshot = {
-      user_query: currentTaskList.user_query,
-      tasks: currentTaskList.tasks.map(task => ({ ...task })),
-      created_at: currentTaskList.created_at
-    };
+    // Write the updated plan back to the file
+    await fs.writeJson(planPath, taskList, { spaces: 2 });
 
     return createToolResponse(
       true,
-      snapshot,
-      `Updated ${updatesMade.length} task(s)`
+      taskList,
+      `Updated ${updatesMade.length} task(s) in the session plan`
     );
-
   } catch (error) {
     return createToolResponse(false, undefined, '', `Error: Failed to update tasks - ${error}`);
+  }
+}
+
+/**
+ * Reads the persistent session plan from disk.
+ * This is a new tool for the AI to check the plan.
+ */
+export async function getTasks(): Promise<ToolResult> {
+  const planPath = path.join(projectContext.bmadDir, 'session_plan.json');
+  try {
+    const exists = await fs.pathExists(planPath);
+    if (!exists) {
+      return createToolResponse(true, null, 'No active plan found.');
+    }
+    const planContent = await fs.readJson(planPath);
+    return createToolResponse(true, planContent, 'Successfully retrieved the active plan.');
+  } catch (error) {
+    return createToolResponse(false, undefined, '', 'Error: Failed to read the session plan.');
+  }
+}
+
+/**
+ * Clears the persistent session plan from disk.
+ * This is a new tool for the AI to use when a plan is finished.
+ */
+export async function clearTasks(): Promise<ToolResult> {
+  const planPath = path.join(projectContext.bmadDir, 'session_plan.json');
+  try {
+    const exists = await fs.pathExists(planPath);
+    if (exists) {
+      await fs.remove(planPath);
+    }
+    return createToolResponse(true, undefined, 'Successfully cleared the active plan.');
+  } catch (error) {
+    return createToolResponse(false, undefined, '', 'Error: Failed to clear the session plan.');
   }
 }
 
