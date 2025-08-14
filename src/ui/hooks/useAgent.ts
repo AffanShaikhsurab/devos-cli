@@ -67,8 +67,23 @@ export function useAgent(
       id: Math.random().toString(36).substr(2, 9),
       timestamp: new Date(),
     };
-    dbManager.addMessage(newMessage);
-    setMessages(prev => [...prev, newMessage]);
+
+    setMessages(prev => {
+        // Get the most recent message, if it exists
+        const lastMessage = prev.length > 0 ? prev[prev.length - 1] : null;
+
+        // Check if the last message is an exact duplicate of the new one.
+        // This is a lightweight way to prevent the same message event from being processed twice in a row.
+        if (lastMessage && lastMessage.role === newMessage.role && lastMessage.content === newMessage.content) {
+            // It's a duplicate of the immediately preceding message, so we ignore it.
+            return prev;
+        }
+
+        // If it's not a duplicate, add it to the database and the state.
+        dbManager.addMessage(newMessage);
+        return [...prev, newMessage];
+    });
+
     return newMessage.id;
   }, []);
 
